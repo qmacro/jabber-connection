@@ -1,0 +1,22 @@
+The Jabber::Connection package provides basic functions
+for connecting clients and components to a Jabber server. 
+
+The package contains three modules:
+
+- Jabber::Connection
+
+  Handles connectivity, authentication, XML streaming and
+  callbacks
+
+- Jabber::NodeFactory
+
+  Enables creation and manipulation of Jabber packets
+  represented by Jabber::NodeFactory::Node objects
+
+- Jabber::NS
+
+  A heap of constants representing the Jabber namespace
+  values and other things
+
+It's a young package, all comments, questions and so on to
+the author, please: dj.adams@pobox.com
