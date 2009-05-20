@@ -1,7 +1,5 @@
 package Jabber::NS;
 
-# $Id: NS.pm,v 1.1.1.1 2001/09/21 17:20:54 dj Exp $
-
 =head1 NAME
 
 Jabber::NS - Jabber namespaces

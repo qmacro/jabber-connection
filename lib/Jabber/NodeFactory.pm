@@ -1,7 +1,5 @@
 package Jabber::NodeFactory;
 
-# $Id: NodeFactory.pm,v 1.3 2002/02/22 20:02:58 dj Exp $
-
 use XML::Parser;
 
 =head1 NAME
