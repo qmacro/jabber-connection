@@ -9,5 +9,6 @@ WriteMakefile(
                         XML::Parser      => '2.29',
                         Digest::SHA1     => '1.03',
                         Scalar::Util     => '1.07',
+                        IO::Socket::SSL  => '1.00',
                        },
 );
