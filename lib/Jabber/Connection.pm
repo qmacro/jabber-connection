@@ -1,7 +1,5 @@
 package Jabber::Connection;
 
-# $Id: Connection.pm,v 1.7 2002/05/06 16:53:11 dj Exp $
-
 =head1 NAME
 
 Connection - Simple connectivity functions for Jabber
@@ -48,6 +46,7 @@ for connecting clients and components to a Jabber server.
 use strict;
 use XML::Parser;
 use IO::Socket::INET;
+use IO::Socket::SSL;
 use IO::Select;
 use Digest::SHA1 qw(sha1_hex);
 use Carp;
@@ -59,7 +58,7 @@ use constant BEAT => 5;
 
 use vars qw($VERSION);
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 my $id = 1;
 
@@ -97,10 +96,37 @@ stream namespaces supported now *** ]
 
 the name of the component in a component connection.
 
+=back
+
+OR
+
+For client connections when you need to proxy eg. gmail.com:
+  my $c = new Jabber::Connection(
+    server => '<some one>@talk.google.com',
+    localname => 'gmail.com',
+    ssl    => 1,
+    ...
+  );
+
+=over 4
+
 =item ssl
 
 whether the connection should use SSL
-[ *** not supported yet! *** ]
+
+Old style SSL -
+  my $c = new Jabber::Connection(
+    server => 'jabber.org:5223',
+    ssl    => 1,
+    ...
+  );
+
+TLS -
+  my $c = new Jabber::Connection(
+    server => 'jabber.org',
+    ssl    => 1,
+    ...
+  );
 
 =back
 
@@ -118,6 +144,7 @@ sub new {
   croak "No host specified" unless $args{server};
   ($self->{host}, $self->{port}) = split(":", $args{server});
   $self->{port} ||= 5222;
+  $self->{ssl} = $args{ssl} || 0;
 
   $self->{ns} = $args{ns} || NS_CLIENT;
   $self->{localname} = $args{localname};
@@ -158,12 +185,22 @@ Example:
 sub connect {
 
   my $self = shift;
-  $self->{socket} = new IO::Socket::INET
-    (
-      PeerAddr => $self->{host},
-      PeerPort => $self->{port},
-      Proto    => 'tcp',
-    );
+
+  if ($self->{ssl} && $self->{port} == 5223) {
+    $self->{socket} = new IO::Socket::SSL
+      (
+        PeerAddr => $self->{host},
+        PeerPort => $self->{port},
+        Proto    => 'tcp',
+      );
+  } else {
+    $self->{socket} = new IO::Socket::INET
+      (
+        PeerAddr => $self->{host},
+        PeerPort => $self->{port},
+        Proto    => 'tcp',
+      );
+  }
   
   unless ($self->{socket}) {
     $self->{errortext} = "Can't establish socket connection";
@@ -173,11 +210,27 @@ sub connect {
   $self->{select} = new IO::Select($self->{socket});
 
   $self->_write($self->_stream_header());
-  $self->_read();
+  $self->_read(); # this may or may not return starttls and other features
   if ($self->{streamerror}) {
     return 0;
   }
   else {
+    # negotiate TLS
+    if ($self->{ssl} && $self->{port} == 5222) {
+      $self->_write("<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>");
+      my $proceed = $self->_read();
+      if ($proceed =~ /<proceed/) {
+        IO::Socket::SSL->start_SSL($self->{socket},{SSL_verify_mode=>0x00});
+        $self->_write($self->_stream_header());
+        # bypass the parser - read by hand
+        $self->_read_from_wire();
+        if ($self->{streamerror}) {
+          return 0;
+        }
+      } else {
+        die "starttls negotiation failed!";
+      }
+    }
     return $self->{connected} = 1;
   }
 
@@ -399,7 +452,7 @@ sub _write {
   my $data = shift;
   $self->_log("SEND: ".$data);
 
-  $self->{socket}->send($data);
+  $self->{socket}->syswrite($data);
   
 }
 
@@ -407,14 +460,24 @@ sub _read {
 
   my $self = shift;
   my $data;
+  
+  my $received = $self->_read_from_wire();
+  $self->{parser}->parse_more($received);
+
+  return $received;
+}
+
+sub _read_from_wire {
+
+  my $self = shift;
+  my $data;
   my $received;
 
-  while (defined $self->{socket}->recv($data, 1024)) {   # or POSIX::BUFSIZ?
+  while (defined $self->{socket}->sysread($data, 1024)) {   # or POSIX::BUFSIZ?
     $received .= $data;
     last if length($data) != 1024;
   }
   $self->_log("RECV: ".$received);
-  $self->{parser}->parse_more($received);
 
   return $received;
 }
@@ -729,9 +792,13 @@ Jabber::NodeFactory, Jabber::NS
 
 DJ Adams
 
+=head1 CREDITS
+
+Piers Harding - added SSL/TLS support
+
 =head1 VERSION
 
-early
+0.05
 
 =head1 COPYRIGHT
 
