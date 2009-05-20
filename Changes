@@ -1,5 +1,11 @@
 Revision history for Perl extension Jabber::Connection.
 
+0.04  2002-05-05
+  - Jabber::NodeFactory::Node : resolve memory leak due to parent-child
+    reflective pointers (uses Scalar::Util) (chris pile)
+  - Jabber::NodeFactory::Node : fix bug with missing parent
+    relationship built from insertTag($node) calls (me)
+
 0.03  2002-02-24
   - Jabber::Connection : be more accurate with the to='' addressing
     in the stream header (sean welsh)

@@ -8,5 +8,6 @@ WriteMakefile(
     'PREREQ_PM'    => {
                         XML::Parser      => '2.29',
                         Digest::SHA1     => '1.03',
+                        Scalar::Util     => '1.07',
                        },
 );

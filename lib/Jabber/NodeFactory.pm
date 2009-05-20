@@ -244,6 +244,8 @@ $tag1 represents a node that looks like this:
 
 =cut
 
+use Scalar::Util qw(weaken);
+
 sub new {
 
   my ($class, $name, $xmlns, $parent) = @_;
@@ -256,6 +258,7 @@ sub new {
                parent => $parent,
              };
 
+  weaken($node->{parent}); # XXX
   bless $node => $class;
   $node->attr('xmlns' => $xmlns) if $xmlns;
   return $node;
@@ -284,6 +287,15 @@ it doesn't have a parent).
 
 sub parent { 
   my $self = shift;
+  return $self->{parent};
+}
+
+
+# sets parent; called from insertTag()
+sub _setParent {
+  my $self = shift;
+  my $parent = shift;
+  $self->{parent} = $parent;
   return $self->{parent};
 }
 
@@ -438,7 +450,7 @@ sub insertTag {
 
   # Can pass a Node to insert too
   my $tag = ref($tagname) eq ref($self)
-            ? $tagname
+            ? $tagname->_setParent($self) && $tagname
             : new Jabber::NodeFactory::Node($tagname, $ns, $self);
 
   push @{$self->{kids}}, $tag;

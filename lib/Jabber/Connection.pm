@@ -1,6 +1,6 @@
 package Jabber::Connection;
 
-# $Id: Connection.pm,v 1.6 2002/02/25 16:39:39 dj Exp $
+# $Id: Connection.pm,v 1.7 2002/05/06 16:53:11 dj Exp $
 
 =head1 NAME
 
@@ -59,7 +59,7 @@ use constant BEAT => 5;
 
 use vars qw($VERSION);
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 my $id = 1;
 
