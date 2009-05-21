@@ -145,6 +145,7 @@ sub new {
   ($self->{host}, $self->{port}) = split(":", $args{server});
   $self->{port} ||= 5222;
   $self->{ssl} = $args{ssl} || 0;
+  $self->{retro} = $args{retro} || 0;
 
   $self->{ns} = $args{ns} || NS_CLIENT;
   $self->{localname} = $args{localname};
@@ -411,6 +412,8 @@ sub _stream_header {
   my $to = defined($self->{localname}) ? $self->{localname} : $self->{host};
   my $hdr = qq[<?xml version='1.0'?><stream:stream xmlns='$self->{ns}' xmlns:stream='http://etherx.jabber.org/streams' to='$to'];
 # $hdr .= qq[ from='$self->{localname}'] if $self->{ns} eq NS_ACCEPT;
+# version attr for stream element (XMPP vs Jabber) -- http://identi.ca/notice/4440428
+  $hdr .= qq[ version='1.0' ] unless $self->{retro};
   $hdr .= qq[>];
   return $hdr;
 }
